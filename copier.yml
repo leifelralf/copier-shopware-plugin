@@ -1,0 +1,214 @@
+# Copier configuration for cookiecutter-shopware-plugin
+#
+# This file defines the questions asked during template generation, their
+# defaults, validation rules, and conditional logic.
+#
+# Run with: copier copy gh:leifelralf/copier-shopware-plugin ./my-plugin
+
+_min_copier_version: "9.0.0"
+
+# ---------------------------------------------------------------------------
+# Templating settings
+# ---------------------------------------------------------------------------
+
+# Use a non-default delimiter pair to avoid clashes with Twig (`{{ }}`) and
+# Symfony service expressions inside the generated plugin.
+# Inside templates, write [[ var ]] / [% if %] / [# comment #].
+_templates_suffix: .jinja
+
+_envops:
+  block_start_string: "[%"
+  block_end_string: "%]"
+  variable_start_string: "[["
+  variable_end_string: "]]"
+  comment_start_string: "[#"
+  comment_end_string: "#]"
+
+# Files that should NOT be rendered through Jinja (kept verbatim).
+_skip_if_exists: []
+
+_subdirectory: template
+
+_jinja_extensions:
+  - jinja2_time.TimeExtension
+
+# ---------------------------------------------------------------------------
+# Core questions
+# ---------------------------------------------------------------------------
+
+vendor_name:
+  type: str
+  help: "Vendor name (your company or organisation)"
+  default: AcmeCorp
+  validator: >-
+    [% if not vendor_name %]
+    vendor_name must not be empty.
+    [% endif %]
+
+vendor_namespace:
+  type: str
+  help: "PHP namespace root (StudlyCaps, derived from vendor_name)"
+  default: "[[ (vendor_name | replace(' ', '') | replace('-', ''))[0] | upper ~ (vendor_name | replace(' ', '') | replace('-', ''))[1:] ]]"
+  validator: >-
+    [% if not (vendor_namespace | regex_search('^[A-Z][A-Za-z0-9]+$')) %]
+    vendor_namespace must be a valid PHP class name in StudlyCaps (e.g. 'AcmeCorp').
+    [% endif %]
+
+plugin_name:
+  type: str
+  help: "Human-readable plugin name"
+  default: Example Plugin
+  validator: >-
+    [% if not plugin_name %]
+    plugin_name must not be empty.
+    [% endif %]
+
+plugin_class:
+  type: str
+  help: "PHP class name for the plugin bootstrap (StudlyCaps)"
+  default: "[[ plugin_name | replace(' ', '') | replace('-', '') ]]"
+  validator: >-
+    [% if not (plugin_class | regex_search('^[A-Z][A-Za-z0-9]+$')) %]
+    plugin_class must be a valid PHP class name in StudlyCaps (e.g. 'MyAwesomePlugin').
+    [% endif %]
+
+composer_name:
+  type: str
+  help: "Composer package name (vendor/package)"
+  default: "[[ vendor_name | lower | replace(' ', '-') ]]/[[ plugin_name | lower | replace(' ', '-') ]]"
+  validator: >-
+    [% if not (composer_name | regex_search('^[a-z0-9]([_.-]?[a-z0-9]+)*/[a-z0-9](([_.]|-{1,2})?[a-z0-9]+)*$')) %]
+    composer_name must follow vendor/package format (lowercase, e.g. 'acmecorp/my-plugin').
+    [% endif %]
+
+plugin_description:
+  type: str
+  help: "Short plugin description"
+  default: A Shopware 6 plugin
+
+plugin_label_de:
+  type: str
+  help: "Plugin label shown in Shopware admin (de-DE)"
+  default: "[[ plugin_name ]]"
+
+plugin_label_en:
+  type: str
+  help: "Plugin label shown in Shopware admin (en-GB)"
+  default: "[[ plugin_name ]]"
+
+author_name:
+  type: str
+  help: "Author name"
+  default: Jane Doe
+  validator: >-
+    [% if not author_name %]
+    author_name must not be empty.
+    [% endif %]
+
+author_email:
+  type: str
+  help: "Author email"
+  default: jane@example.com
+  validator: >-
+    [% if not (author_email | regex_search('^[^@\s]+@[^@\s]+\.[^@\s]+$')) %]
+    author_email is not a valid email address.
+    [% endif %]
+
+author_github:
+  type: str
+  help: "Author GitHub handle"
+  default: janedoe
+
+plugin_version:
+  type: str
+  help: "Initial plugin version (semver)"
+  default: "0.1.0"
+  validator: >-
+    [% if not (plugin_version | regex_search('^\d+\.\d+\.\d+(-[A-Za-z0-9.]+)?$')) %]
+    plugin_version must follow semantic versioning (e.g. '0.1.0').
+    [% endif %]
+
+min_shopware_version:
+  type: str
+  help: "Required Shopware version constraint (Composer syntax, e.g. '~6.7.0' or '^6.7' or '>=6.7,<7.0')"
+  default: "~6.7.0"
+  validator: >-
+    [%- set v = min_shopware_version | trim -%]
+    [%- set patterns = [
+      '^\d+(\.\d+){0,3}$',
+      '^[~^]\d+(\.\d+){0,3}$',
+      '^\d+(\.\d+){0,3}\.\*$',
+      '^>=?\d+(\.\d+){0,3}$',
+      '^>=?\d+(\.\d+){0,3}\s*,\s*<=?\d+(\.\d+){0,3}$'
+    ] -%]
+    [%- set ok = namespace(matched=false) -%]
+    [%- for p in patterns -%]
+      [%- if v | regex_search(p) -%][%- set ok.matched = true -%][%- endif -%]
+    [%- endfor -%]
+    [% if not ok.matched or not (v | regex_search('6\.\d+')) %]
+    Use Composer constraint syntax referencing Shopware 6 (examples: '~6.7.0', '^6.7', '>=6.7,<7.0').
+    [% endif %]
+
+php_version:
+  type: str
+  help: "Required PHP version"
+  default: "8.2"
+  choices:
+    - "8.2"
+    - "8.3"
+    - "8.4"
+
+license:
+  type: str
+  help: "License"
+  default: MIT
+  choices:
+    - MIT
+    - proprietary
+    - Apache-2.0
+    - GPL-3.0-or-later
+
+homepage:
+  type: str
+  help: "Plugin homepage URL"
+  default: "https://github.com/[[ author_github ]]/[[ plugin_name | lower | replace(' ', '-') ]]"
+
+# ---------------------------------------------------------------------------
+# Code Quality
+# ---------------------------------------------------------------------------
+
+use_code_quality:
+  type: bool
+  help: "Add Code Quality tooling (PHPStan, code style, Rector)?"
+  default: yes
+
+phpstan_level:
+  type: str
+  help: "PHPStan analysis level"
+  default: "8"
+  choices:
+    - "8"
+    - "max"
+    - "6"
+  when: "[[ use_code_quality ]]"
+
+use_shopware_dev_tools:
+  type: bool
+  help: "Include shopware/dev-tools (PHPStan rules tailored to Shopware)?"
+  default: yes
+  when: "[[ use_code_quality ]]"
+
+code_style_tool:
+  type: str
+  help: "Code style tool"
+  default: php-cs-fixer
+  choices:
+    - php-cs-fixer
+    - phpcs
+  when: "[[ use_code_quality ]]"
+
+use_rector:
+  type: bool
+  help: "Include Rector (automated refactoring + Shopware version upgrades)?"
+  default: yes
+  when: "[[ use_code_quality ]]"

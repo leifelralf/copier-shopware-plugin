@@ -1,0 +1,15 @@
+parameters:
+    level: [[ phpstan_level ]]
+    paths:
+        - src
+    excludePaths:
+        - src/Resources/app/administration/node_modules
+        - src/Resources/app/storefront/node_modules
+    bootstrapFiles:
+        - vendor/autoload.php
+    tmpDir: .phpstan.cache
+    treatPhpDocTypesAsCertain: false
+[% if use_shopware_dev_tools -%]
+includes:
+    - vendor/shopware/dev-tools/phpstan/extension.neon
+[%- endif %]

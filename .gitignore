@@ -1,0 +1,49 @@
+# ---------------------------------------------------------------------------
+# Python / pytest
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+
+# ---------------------------------------------------------------------------
+# Editor & OS
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Local working files
+# ---------------------------------------------------------------------------
+NOTES.md
+TODO.md
+SCRATCH.md
+.notes/
+.scratch/
+
+# Per-developer tooling configuration & cache (not shared)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.aider*
+.cursor/
+
+# Generated test outputs
+/tmp-output/
+/test-output/
+
+# Build artifacts
+*.zip
+
+PUBLISHING.md
+/.out/

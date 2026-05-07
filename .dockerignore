@@ -1,0 +1,43 @@
+# Test infrastructure — not needed in the production image.
+tests/
+pytest.ini
+requirements-test.txt
+Makefile
+
+# Documentation — only README is useful inside the image, but it's not
+# served by the container. Skip everything to keep the build context small.
+README.md
+*.md
+
+# Git internals
+.git/
+.gitignore
+.gitattributes
+
+# CI configuration
+.github/
+
+# Editor & OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Python caches that may leak in from local test runs
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+
+# Local generated test outputs
+.copier-answers.yml
+
+# Per-developer tooling configuration & cache (not shared)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.aider*
+.cursor/
+
+PUBLISHING.md
+/.out/

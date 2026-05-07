@@ -1,0 +1,83 @@
+# serializer version: 1
+# name: test_bootstrap_class_snapshot
+  '''
+  <?php declare(strict_types=1);
+  
+  namespace AcmeCorp\ExamplePlugin;
+  
+  use Shopware\Core\Framework\Plugin;
+  
+  class ExamplePlugin extends Plugin
+  {
+  }
+  
+  '''
+# ---
+# name: test_file_tree_full_snapshot
+  '''
+  .editorconfig
+  .gitignore
+  .php-cs-fixer.dist.php
+  CHANGELOG.md
+  LICENSE
+  README.md
+  composer.json
+  phpstan.neon
+  rector.php
+  src/ExamplePlugin.php
+  src/Resources/config/services.xml
+  src/Resources/snippet/de_DE/messages.de-DE.json
+  src/Resources/snippet/en_GB/messages.en-GB.json
+  
+  '''
+# ---
+# name: test_file_tree_minimal_snapshot
+  '''
+  .editorconfig
+  .gitignore
+  CHANGELOG.md
+  LICENSE
+  README.md
+  composer.json
+  src/ExamplePlugin.php
+  src/Resources/config/services.xml
+  src/Resources/snippet/de_DE/messages.de-DE.json
+  src/Resources/snippet/en_GB/messages.en-GB.json
+  
+  '''
+# ---
+# name: test_file_tree_phpcs_no_rector_snapshot
+  '''
+  .editorconfig
+  .gitignore
+  CHANGELOG.md
+  LICENSE
+  README.md
+  composer.json
+  phpcs.xml.dist
+  phpstan.neon
+  src/ExamplePlugin.php
+  src/Resources/config/services.xml
+  src/Resources/snippet/de_DE/messages.de-DE.json
+  src/Resources/snippet/en_GB/messages.en-GB.json
+  
+  '''
+# ---
+# name: test_phpstan_neon_snapshot
+  '''
+  parameters:
+      level: max
+      paths:
+          - src
+      excludePaths:
+          - src/Resources/app/administration/node_modules
+          - src/Resources/app/storefront/node_modules
+      bootstrapFiles:
+          - vendor/autoload.php
+      tmpDir: .phpstan.cache
+      treatPhpDocTypesAsCertain: false
+  includes:
+      - vendor/shopware/dev-tools/phpstan/extension.neon
+  
+  '''
+# ---
