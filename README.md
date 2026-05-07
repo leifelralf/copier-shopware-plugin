@@ -146,15 +146,16 @@ or when bootstrapping multiple plugins from the same source of truth.
     <h4 align="center">Truly modular</h4>
     <p align="center">Toggle Code Quality, Testing, CI/CD individually. Sub-questions disappear when not needed — no leftover config.</p>
   </td>
-  <td width="33%" valign="top">
-    <h3 align="center">🛡️</h3>
-    <h4 align="center">Hardened image</h4>
-    <p align="center">Multi-stage Docker build on Chainguard distroless. ~60&nbsp;MB final size, daily-rebuilt base, zero shell.</p>
-  </td>
+
   <td width="33%" valign="top">
     <h3 align="center">🔐</h3>
     <h4 align="center">Signed releases</h4>
     <p align="center">Every published image is keyless-signed via Cosign and ships an SBOM plus a build provenance attestation.</p>
+  </td>
+<td valign="top">
+    <h3 align="center">✅</h3>
+    <h4 align="center">Validated input</h4>
+    <p align="center">Bad PHP class names, malformed Composer names, broken Shopware versions are rejected before generation, not after.</p>
   </td>
 </tr>
 <tr>
@@ -172,23 +173,6 @@ or when bootstrapping multiple plugins from the same source of truth.
     <h3 align="center">🚀</h3>
     <h4 align="center">Multi-arch</h4>
     <p align="center">Built for <code>linux/amd64</code> and <code>linux/arm64</code>. Native on Apple Silicon, Hetzner ARM, AWS Graviton.</p>
-  </td>
-</tr>
-<tr>
-  <td valign="top">
-    <h3 align="center">✅</h3>
-    <h4 align="center">Validated input</h4>
-    <p align="center">Bad PHP class names, malformed Composer names, broken Shopware versions are rejected before generation, not after.</p>
-  </td>
-  <td valign="top">
-    <h3 align="center">🛠️</h3>
-    <h4 align="center">Built from agency work</h4>
-    <p align="center">Defaults reflect what actually ships in production stores running Shopware on real-world stacks. Not a hobby template.</p>
-  </td>
-  <td valign="top">
-    <h3 align="center">🌍</h3>
-    <h4 align="center">i18n-ready</h4>
-    <p align="center">Snippet files for <code>de_DE</code> and <code>en_GB</code> out of the box. Multi-license support: MIT, Apache-2.0, GPL-3.0, proprietary.</p>
   </td>
 </tr>
 </table>
