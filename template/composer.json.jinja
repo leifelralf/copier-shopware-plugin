@@ -1,0 +1,95 @@
+[%- set dev_deps = [] -%]
+[%- set scripts = {} -%]
+[%- if use_code_quality -%]
+  [%- set _ = dev_deps.append(['phpstan/phpstan', '^1.11']) -%]
+  [%- set _ = dev_deps.append(['phpstan/extension-installer', '^1.4']) -%]
+  [%- if use_shopware_dev_tools -%]
+    [%- set _ = dev_deps.append(['shopware/dev-tools', '*']) -%]
+  [%- endif -%]
+  [%- if code_style_tool == 'php-cs-fixer' -%]
+    [%- set _ = dev_deps.append(['friendsofphp/php-cs-fixer', '^3.64']) -%]
+  [%- elif code_style_tool == 'phpcs' -%]
+    [%- set _ = dev_deps.append(['squizlabs/php_codesniffer', '^3.10']) -%]
+  [%- endif -%]
+  [%- if use_rector -%]
+    [%- set _ = dev_deps.append(['rector/rector', '^1.2']) -%]
+  [%- endif -%]
+[%- endif -%]
+{
+    "name": "[[ composer_name ]]",
+    "description": "[[ plugin_description ]]",
+    "version": "[[ plugin_version ]]",
+    "type": "shopware-platform-plugin",
+    "license": "[[ license ]]",
+    "homepage": "[[ homepage ]]",
+    "authors": [
+        {
+            "name": "[[ author_name ]]",
+            "email": "[[ author_email ]]"
+        }
+    ],
+    "require": {
+        "php": "^[[ php_version ]]",
+        "shopware/core": "[[ min_shopware_version ]]"
+    }[% if dev_deps %],
+    "require-dev": {
+        [%- for name, constraint in dev_deps %]
+        "[[ name ]]": "[[ constraint ]]"[% if not loop.last %],[% endif %]
+        [%- endfor %]
+    }[% endif %],
+    "extra": {
+        "shopware-plugin-class": "[[ vendor_namespace ]]\\[[ plugin_class ]]\\[[ plugin_class ]]",
+        "label": {
+            "de-DE": "[[ plugin_label_de ]]",
+            "en-GB": "[[ plugin_label_en ]]"
+        },
+        "description": {
+            "de-DE": "[[ plugin_description ]]",
+            "en-GB": "[[ plugin_description ]]"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "[[ vendor_namespace ]]\\[[ plugin_class ]]\\": "src/"
+        }
+    }[% if use_code_quality %],
+    "scripts": {
+        "phpstan": "phpstan analyse",
+        [%- if code_style_tool == 'php-cs-fixer' %]
+        "cs-fixer": "php-cs-fixer fix",
+        "cs-fixer:check": "php-cs-fixer fix --dry-run --diff",
+        [%- elif code_style_tool == 'phpcs' %]
+        "phpcs": "phpcs",
+        "phpcbf": "phpcbf",
+        [%- endif %]
+        [%- if use_rector %]
+        "rector": "rector process",
+        "rector:check": "rector process --dry-run",
+        [%- endif %]
+        "lint": [
+            "@phpstan"[% if code_style_tool == 'php-cs-fixer' %],
+            "@cs-fixer:check"[% elif code_style_tool == 'phpcs' %],
+            "@phpcs"[% endif %][% if use_rector %],
+            "@rector:check"[% endif %]
+        ],
+        "lint:fix": [
+            [%- if code_style_tool == 'php-cs-fixer' %]
+            "@cs-fixer"[% if use_rector %],
+            "@rector"[% endif %]
+            [%- elif code_style_tool == 'phpcs' %]
+            "@phpcbf"[% if use_rector %],
+            "@rector"[% endif %]
+            [%- elif use_rector %]
+            "@rector"
+            [%- endif %]
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "phpstan/extension-installer": true,
+            "php-http/discovery": true,
+            "symfony/runtime": true
+        },
+        "sort-packages": true
+    }[% endif %]
+}

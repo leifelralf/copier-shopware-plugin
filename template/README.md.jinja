@@ -1,0 +1,37 @@
+# [[ plugin_name ]]
+
+[[ plugin_description ]]
+
+## Requirements
+
+- Shopware [[ min_shopware_version ]] or higher
+- PHP [[ php_version ]] or higher
+
+## Installation
+
+### Via Composer
+
+```bash
+composer require [[ composer_name ]]
+bin/console plugin:refresh
+bin/console plugin:install --activate [[ plugin_class ]]
+bin/console cache:clear
+```
+
+### Manual
+
+1. Copy this plugin into `custom/plugins/[[ plugin_class ]]`
+2. Run:
+   ```bash
+   bin/console plugin:refresh
+   bin/console plugin:install --activate [[ plugin_class ]]
+   bin/console cache:clear
+   ```
+
+## License
+
+This project is licensed under the [[ license ]] License — see the [LICENSE](LICENSE) file for details.
+
+## Author
+
+[[ author_name ]] &lt;[[ author_email ]]&gt;

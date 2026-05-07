@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<ruleset name="[[ plugin_class ]]">
+    <description>Coding standard for [[ plugin_name ]]</description>
+
+    <file>src</file>
+
+    <exclude-pattern>src/Resources/app/administration/node_modules/*</exclude-pattern>
+    <exclude-pattern>src/Resources/app/storefront/node_modules/*</exclude-pattern>
+    <exclude-pattern>vendor/*</exclude-pattern>
+
+    <arg name="basepath" value="."/>
+    <arg name="colors"/>
+    <arg name="parallel" value="8"/>
+    <arg value="np"/>
+
+    <rule ref="PSR12"/>
+
+    <rule ref="Generic.PHP.RequireStrictTypes"/>
+    <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+    <rule ref="Generic.WhiteSpace.DisallowTabIndent"/>
+
+    <config name="php_version" value="[[ (php_version | replace('.', '') ~ '00') | int ]]"/>
+</ruleset>

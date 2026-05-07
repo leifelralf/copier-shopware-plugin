@@ -1,0 +1,197 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  # Also allow manual triggers for test releases.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to push (e.g. v0.2.0-rc1). Skips GitHub Release."
+        required: true
+        default: "v0.0.0-test"
+
+# Cancel in-progress runs on the same ref to avoid duplicate releases.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write       # for creating GitHub Releases
+  packages: write       # for pushing to ghcr.io
+  id-token: write       # for keyless Cosign signing via OIDC
+  attestations: write   # for build provenance attestations
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Run the test suite once before publishing anything.
+  # We do NOT skip this even on workflow_dispatch — broken releases are worse
+  # than slow ones.
+  # -------------------------------------------------------------------------
+  test:
+    name: Pre-release tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-test.txt
+
+      - run: pip install -r requirements-test.txt
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer
+          coverage: none
+
+      - run: pytest -v
+
+  # -------------------------------------------------------------------------
+  # Build & push multi-arch Docker image, sign with Cosign, attach SBOM.
+  # -------------------------------------------------------------------------
+  docker:
+    name: Build & publish Docker image
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.tag }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          # Strip leading 'v' for semver-style tags (v0.2.0 -> 0.2.0)
+          SEMVER="${VERSION#v}"
+          echo "version=${VERSION}"  >> "$GITHUB_OUTPUT"
+          echo "semver=${SEMVER}"    >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU (for arm64 emulation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Generates the full set of Docker tags from the semver string:
+      #   0.2.0  ->  ghcr.io/USER/REPO:0.2.0
+      #              ghcr.io/USER/REPO:0.2
+      #              ghcr.io/USER/REPO:0
+      #              ghcr.io/USER/REPO:latest
+      - name: Compute Docker tags & labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
+            type=semver,pattern={{major}},value=${{ steps.version.outputs.version }}
+            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
+          labels: |
+            org.opencontainers.image.title=copier-shopware-plugin
+            org.opencontainers.image.description=Opinionated Copier template for Shopware 6 plugins
+            org.opencontainers.image.licenses=MIT
+
+      - name: Build & push (multi-arch)
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.semver }}
+            REVISION=${{ github.sha }}
+          # Layer cache speeds up subsequent releases significantly.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Generate SBOM and provenance attestation as part of the build.
+          provenance: true
+          sbom: true
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      # Keyless signing: Cosign uses GitHub's OIDC token to prove the image
+      # came from this workflow. No long-lived signing key needed.
+      - name: Sign image with Cosign (keyless)
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          for tag in ${TAGS}; do
+            cosign sign --yes "${tag}@${DIGEST}"
+          done
+
+      - name: Generate build provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+  # -------------------------------------------------------------------------
+  # Create the GitHub Release (with auto-generated changelog).
+  # Skipped for workflow_dispatch — those are test releases without GH Release.
+  # -------------------------------------------------------------------------
+  github-release:
+    name: GitHub Release
+    needs: docker
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for changelog generation
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## 🐳 Docker image
+
+            ```bash
+            docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ```
+
+            All published tags for this release:
+            - `${{ github.ref_name }}` (exact)
+            - `${{ github.ref_name }}` major.minor
+            - `${{ github.ref_name }}` major
+            - `latest`
+
+            **Image digest** is signed with Cosign (keyless, OIDC). Verify with:
+
+            ```bash
+            cosign verify ghcr.io/${{ github.repository }}:${{ github.ref_name }} \
+              --certificate-identity-regexp 'https://github.com/${{ github.repository }}' \
+              --certificate-oidc-issuer 'https://token.actions.githubusercontent.com'
+            ```
